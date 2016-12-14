@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:util="http://www.springframework.org/schema/util"
+       xmlns="http://www.springframework.org/schema/beans"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd   http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd">
+
+    <bean id="myRealm" class="com.spring.shiro.MyRealm"></bean>
+
+    <bean id="securityManager" class="org.apache.shiro.web.mgt.DefaultWebSecurityManager">
+        <property name="realm" ref="myRealm"/>
+        <property name="sessionManager" ref="sessionManager"></property>
+    </bean>
+
+    <!-- 会话管理器 -->
+    <bean id="sessionManager" class="org.apache.shiro.web.session.mgt.DefaultWebSessionManager">
+        <!--session的过期时间，单位毫秒-->
+        <!--<property name="globalSessionTimeout" value="1800000"/>-->
+        <!--是否删除session-->
+        <property name="deleteInvalidSessions" value="true"/>
+        <!--扫描session线程,负责清理超时会话-->
+        <property name="sessionValidationSchedulerEnabled" value="false"/>
+        <property name="sessionDAO" ref="redisSessionDAO"/>
+    </bean>
+
+    <!--sessionDao-->
+    <bean id="redisSessionDAO" class="com.spring.shiro.RedisSessionDAO"></bean>
+
+    <!--开启权限注解-->
+    <bean class="org.apache.shiro.spring.security.interceptor.AuthorizationAttributeSourceAdvisor">
+        <property name="securityManager" ref="securityManager"></property>
+    </bean>
+    <bean class="org.springframework.aop.framework.autoproxy.DefaultAdvisorAutoProxyCreator">
+        <property name="proxyTargetClass" value="true"></property>
+    </bean>
+    <!--结束-->
+
+    <!--自定义抓取无权限异常类-->
+    <bean id="exceptionResolver" class="com.spring.shiro.MyExceptionResolver"></bean>
+
+    <!--session过期ajax重定向-->
+    <bean id="redirectFilter" class="com.spring.shiro.RedirectFilter"/>
+
+    <!-- 配置shiro的过滤器工厂类，id- shiroFilter要和我们在web.xml中配置的过滤器一致 -->
+    <bean id="shiroFilter" class="org.apache.shiro.spring.web.ShiroFilterFactoryBean">
+        <!-- 调用我们配置的权限管理器 -->
+        <property name="securityManager" ref="securityManager"/>
+        <!-- 配置我们的登录请求地址 -->
+        <property name="loginUrl" value="/login"/>
+        <property name="unauthorizedUrl" value="403"/>
+        <!-- 自定义的拦截器 -->
+        <property name="filters">
+            <util:map>
+                <entry key="authc" value-ref="redirectFilter"/>
+            </util:map>
+        </property>
+        <!-- 权限配置 -->
+        <property name="filterChainDefinitions">
+            <value>
+                <!-- anon表示此地址不需要任何权限即可访问 -->
+                /static/**=anon
+                /initlogin=anon
+                <!--/ajax=anon如果没有这句，session过期后，ajax无法访问-->
+                /ajax=anon
+                <!--所有的请求(除去配置的静态资源请求或请求地址为anon的请求)都要通过登录验证,如果未登录则跳到/login-->
+                /** = authc
+            </value>
+        </property>
+    </bean>
+
+    <!-- Shiro生命周期处理器-->
+    <bean id="lifecycleBeanPostProcessor" class="org.apache.shiro.spring.LifecycleBeanPostProcessor"/>
+
+</beans>

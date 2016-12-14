@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="war" build-on-make="true" name="shiro-spring:war">
+    <output-path>$PROJECT_DIR$/target</output-path>
+    <root id="archive" name="shiro-spring.war">
+      <element id="artifact" artifact-name="shiro-spring:war exploded" />
+    </root>
+  </artifact>
+</component>

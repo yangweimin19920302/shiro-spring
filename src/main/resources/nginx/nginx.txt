@@ -1,0 +1,4 @@
+start nginx.exe 启动nginx
+taskkill /F /IM nginx.exe > nul 关闭nginx所有进程
+
+http://www.cnblogs.com/zhuhongbao/archive/2013/06/04/3118061.html nginx安装
